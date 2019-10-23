@@ -5,7 +5,7 @@
 * [Object options](#object-options)
 * [Props](#props)
 * [Slots](#slots)
-* [To do](#to-do)
+* [Patch notes](#patch-notes)
 
 # General
 Simple select vue component, that allows you to control selected options from array
@@ -46,7 +46,7 @@ data(){
 
     return{
 
-        yourArrayWitOptions:[
+        yourArrayWithOptions:[
             'option1',
             'option2',
             'option3'
@@ -61,17 +61,17 @@ data(){
 Use component in your code
 
 ```
-<vueselect :options="yourArrayWitOptions" v-model="output"/>
+<vueselect :options="yourArrayWithOptions" v-model="output"/>
 ```
 
-You allways can define array with objects
+You can always define array with objects
 
 ```
 data(){
 
     return{
 
-        yourArrayWitOptions:[
+        yourArrayWithOptions:[
             {id: 1, name: 'option1'},
             {id: 2, name: 'option2'},
             {id: 3, name: 'option3'}
@@ -84,10 +84,10 @@ data(){
 }
 ```
 
-And then define <b>label</b> prop for displayed value in select, and <b>reduce</b> prop for key in object for select output
+And then use <b>label</b> prop for displayed value in select, and <b>reduce</b> prop for key in object for select output
 
 ```
-<vueselect :options="yourArrayWitOptions" label="name" reduce="id" v-model="output"/>
+<vueselect :options="yourArrayWithOptions" label="name" reduce="id" v-model="output"/>
 ```
 
 For option named 'option2' output will be '2'
@@ -105,7 +105,7 @@ data(){
 
     return{
 
-        yourArrayWitOptions:[
+        yourArrayWithOptions:[
             {id: 1, name: 'option1', class: 'your-class-for-option'},
             {id: 2, name: 'option2', hide: true},
             {id: 3, name: 'option3'}
@@ -127,17 +127,29 @@ In this case 'option1' will have class "your-class-for-option" and 'option2' wil
 | options     | Array  |         | No       | Array with select options.                                                                  |
 | label       | String |         | No       | Displayed value in select for array with objects.                                           |
 | reduce      | String |         | No       | Select key in object for vueselect component output.                                        |
+| searchable  | Boolean| false   | No       | Enable search in options                                                                    |
 
 # Slots
-There is avaible slot in case of no avaible options, default: "No options".
+
+| Slot              | Description                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| noOptions         | Default value "no options".                                                                 |
+| icon              | Slot for icon.                                                                              |
+
+Example:
 
 ```
-<vueselect :options="yourArrayWitOptions" label="name" reduce="id" v-model="output">
+<vueselect :options="yourArrayWithOptions" label="name" reduce="id" v-model="output">
     <template v-slot:noOptions>
         No avaible options
     </template>
 <vueselect/>
 ```
 
-# To do
-In next update I plan to add possibility to search in options
+# Patch notes
+
+### 1.1.0
+* Added search possibility
+* Dynamic position of dropdown depending on the avaible space
+* Dynamic tooltip
+* Added slot for icon

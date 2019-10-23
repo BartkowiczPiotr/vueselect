@@ -1,26 +1,25 @@
 <template>
     <div class="v-select">
-        <div class="v-selected" @click="showList($event)">{{label ? display[label] : display}}</div>
+        <div class="v-select-container">
+            <div class="v-select-container__inner">
+                <div v-if="!showSearch" class="v-selected" @click="showList($event)" :title="label ? display[label] : display">{{label ? display[label] : display}}</div>
+                <input v-if="showSearch" class="v-selected v-select-search" type="text" v-model="search" />
+            </div>
+        </div>
         <span class="v-select-icon" :class="{'rotate' :rotate}">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 60 60"  xml:space="preserve">
-            <g id="Layer_1">
-                <path fill="#58595B" d="M31.601,39.612c-0.916,0.824-2.399,0.824-3.314,0l-27.6-24.9c-0.916-0.825-0.916-2.165,0-2.99l0,0
-                    c0.916-0.826,2.399-0.826,3.314,0l27.599,24.9C32.517,37.447,32.517,38.786,31.601,39.612L31.601,39.612z"/>
-                <path fill="#58595B" d="M28.469,39.612c-0.915-0.826-0.915-2.165,0-2.99l27.598-24.901c0.915-0.826,2.401-0.826,3.315,0l0,0
-                    c0.916,0.826,0.916,2.165,0,2.991l-27.599,24.9C30.868,40.437,29.384,40.437,28.469,39.612L28.469,39.612z"/>
-            </g>
-            <g id="Layer_2" display="none">
-                <path display="inline" fill="#231F20" d="M31.694,53.612c-0.916,0.824-2.399,0.824-3.314,0l-27.6-24.9
-                    c-0.916-0.825-0.916-2.165,0-2.99l0,0c0.916-0.826,2.399-0.826,3.314,0l27.599,24.9C32.61,51.447,32.61,52.786,31.694,53.612
-                    L31.694,53.612z"/>
-                <path display="inline" fill="#231F20" d="M28.652,53.59c-0.824-0.915-0.824-2.398,0-3.313l24.9-27.6
-                    c0.825-0.916,2.165-0.916,2.99,0l0,0c0.826,0.916,0.826,2.399,0,3.314l-24.9,27.599C30.817,54.506,29.479,54.506,28.652,53.59
-                    L28.652,53.59z"/>
-            </g>
-            </svg>
+            <slot name="icon">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 60 60"  xml:space="preserve">
+                <g>
+                    <path fill="#58595B" d="M31.601,39.612c-0.916,0.824-2.399,0.824-3.314,0l-27.6-24.9c-0.916-0.825-0.916-2.165,0-2.99l0,0
+                        c0.916-0.826,2.399-0.826,3.314,0l27.599,24.9C32.517,37.447,32.517,38.786,31.601,39.612L31.601,39.612z"/>
+                    <path fill="#58595B" d="M28.469,39.612c-0.915-0.826-0.915-2.165,0-2.99l27.598-24.901c0.915-0.826,2.401-0.826,3.315,0l0,0
+                        c0.916,0.826,0.916,2.165,0,2.991l-27.599,24.9C30.868,40.437,29.384,40.437,28.469,39.612L28.469,39.612z"/>
+                </g>
+                </svg>
+            </slot>
         </span>
         <div class="v-dropdown">
-            <div v-for="(option, index) in options" class="v-dropdown__item" :key="index" :class="[option.class ? option.class : '',{'v-dropdown-hide': option.hide ? true : false}]" @click="selectOption(option)">
+            <div v-for="(option, index) in filteredOptions" class="v-dropdown__item" :key="index" :class="[option.class ? option.class : '',{'v-dropdown-hide': option.hide ? true : false}]" @click="selectOption(option)">
                 {{label ? option[label] : option}}
             </div>
             <div v-if="options.length == 0" class="v-dropdown__item">
@@ -55,6 +54,11 @@ export default {
         reduce:{
             type: String,
             default: '',
+        },
+
+        searchable:{
+            type: Boolean,
+            default: false,
         }
 
     },
@@ -65,6 +69,9 @@ export default {
         select: this.value,
         display: '',
         rotate: false,
+
+        showSearch: false,
+        search: '',
 
       }
 
@@ -127,29 +134,36 @@ export default {
 
         showList(e){
 
+            const select = e.target.parentElement.parentElement.parentElement;
+
             let lists = document.querySelectorAll('.v-dropdown');
 
-                if(lists){
-                    lists.forEach(element => {
-                        element.classList.remove('active')
-                        let icon = element.parentElement.querySelector('.v-select-icon')
-                        icon.classList.remove('rotate');
-                    });
-                }
+            if(lists){
+                lists.forEach(element => {
+                    element.classList.remove('active')
+                    let icon = select.querySelector('.v-select-icon')
+                    icon.classList.remove('rotate');
+                });
+            }
 
-           let list = e.target.parentElement.querySelector('.v-dropdown');
+           const list = select.querySelector('.v-dropdown');
            list.classList.add('active');
 
-           let icon = e.target.parentElement.querySelector('.v-select-icon');
+           let icon = select.querySelector('.v-select-icon');
            icon.classList.add('rotate');
+
+           this.setListPossition(select, list);
+           this.enableSearch(select);
 
         },
 
         close(e){
 
-            if(!e.target.classList.contains('v-selected') && !e.target.classList.contains('v-dropdown')){
+            if(!e.target.classList.contains('v-selected') && !e.target.classList.contains('v-dropdown') && !e.target.classList.contains('v-select-search')){
 
                 let lists = document.querySelectorAll('.v-dropdown');
+                this.showSearch = false;
+                this.search = '';
 
                 if(lists){
                     lists.forEach(element => {
@@ -163,11 +177,70 @@ export default {
 
         },
 
+        setListPossition(select, list){
+
+           const space = window.innerHeight - select.getBoundingClientRect().top + select.offsetHeight;
+           const dropdown = list.offsetHeight;
+
+           list.style.bottom = '';
+           list.style.top = select.offsetHeight + 'px';
+           
+           if(dropdown > space){
+
+               list.style.top = '';
+               list.style.bottom = select.offsetHeight + 'px';
+
+           }
+
+        },
+
+        enableSearch(select){
+
+            if(this.searchable){ 
+
+                this.showSearch = true;
+
+                setTimeout(() => {
+                    select.querySelector('.v-select-search').focus();
+                }, 100);
+                
+
+            }
+
+        },
+
     },
     mounted(){
 
         this.findModel();
         document.addEventListener('click', this.close)
+
+    },
+    computed:{
+
+        filteredOptions() {
+
+            if(!this.label){
+            
+                if(typeof this.options[0] === 'object'){
+
+                    return this.options;
+
+                }
+                
+                return this.options.filter(option => {
+                    return option.toLowerCase().includes(this.search.toLowerCase());
+                })
+
+            }else{
+
+                return this.options.filter(option => {
+                    return option[this.label].toLowerCase().includes(this.search.toLowerCase());
+                })
+
+            }
+
+        }
 
     }
 
@@ -177,13 +250,29 @@ export default {
 <style scoped>
 
 .v-select{
+    display:flex;
     position:relative;
+    border-bottom:1px rgb(192, 192, 192) solid;
+}
+
+.v-select-container{
+    overflow: hidden;
+    width: 100%;
+}
+
+.v-select-container__inner{
+    display: flex;
+    align-items: center;
 }
 
 .v-select-icon{
-    position: absolute;
-    right:-5px;
-    bottom:2px; 
+    position: relative;
+    padding: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    right:0px;
+    bottom:0px; 
 }
 
 .v-select-icon svg{
@@ -196,13 +285,20 @@ export default {
 }
 
 .v-selected{
+    display:block;
     position:relative;
     width:100%;
-    border-bottom:1px rgb(192, 192, 192) solid;
+    height:32px;
+    border-radius: 0;
+    border:none;
     padding: 5px;
     cursor: default;
     text-align: left;
-    min-height: 10px;
+    overflow: hidden;
+    outline: none;
+    box-sizing: border-box;
+    white-space: nowrap;
+    font-size: inherit;
 }
 
 .v-dropdown{

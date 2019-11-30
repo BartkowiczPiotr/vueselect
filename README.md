@@ -122,12 +122,15 @@ In this case 'option1' will have class "your-class-for-option" and 'option2' wil
 
 # Props
 
-| Prop        | Type   | Default | Required | Description                                                                                 |
-| ----------- | ------ | ------- | -------- | ------------------------------------------------------------------------------------------- |
-| options     | Array  |         | No       | Array with select options.                                                                  |
-| label       | String |         | No       | Displayed value in select for array with objects.                                           |
-| reduce      | String |         | No       | Select key in object for vueselect component output.                                        |
-| searchable  | Boolean| false   | No       | Enable search in options                                                                    |
+| Prop         | Type   | Default | Required | Description                                                                                                                      |
+| ------------ | ------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| options      | Array  |         | No       | Array with select options.                                                                                                       |
+| label        | String |         | No       | Displayed value in select for array with objects.                                                                                |
+| reduce       | String |         | No       | Select key in object for vueselect component output.                                                                             |
+| searchable   | Boolean| false   | No       | Enable search in options                                                                                                         |
+| clearable    | Boolean| false   | No       | Enable clear possibility                                                                                                         |
+| multiselect  | Boolean| false   | No       | Enable multiselect - output changes to array                                                                                     |
+| customClasses| Object |         | No       | Allows to add custom classes to elements. Use as keys in object: selected, search, clearIcon, dropdownIcon, dropdown, checkbox   |
 
 # Slots
 
@@ -135,6 +138,7 @@ In this case 'option1' will have class "your-class-for-option" and 'option2' wil
 | ----------------- | ------------------------------------------------------------------------------------------- |
 | noOptions         | Default value "no options".                                                                 |
 | icon              | Slot for icon.                                                                              |
+| clear-icon        | Slot for clear icon.                                                                        |
 
 Example:
 
@@ -147,6 +151,15 @@ Example:
 ```
 
 # Patch notes
+
+### 1.2.1
+* Changed keywords for npm
+
+### 1.2.0
+* Added multiselect
+* Added clear button
+* Added custom classes for elements
+* Added slot for clear icon
 
 ### 1.1.0
 * Added search possibility

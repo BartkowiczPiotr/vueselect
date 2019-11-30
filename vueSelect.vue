@@ -2,11 +2,19 @@
     <div class="v-select">
         <div class="v-select-container">
             <div class="v-select-container__inner">
-                <div v-if="!showSearch" class="v-selected" @click="showList($event)" :title="label ? display[label] : display">{{label ? display[label] : display}}</div>
-                <input v-if="showSearch" class="v-selected v-select-search" type="text" v-model="search" />
+                <div v-if="!showSearch" class="v-selected" :class="cClass.selected ? cClass.selected : ''" @click="showList($event)" :title="label && !multiselect ? display[label] : display">{{label && !multiselect ? display[label] : display}}</div>
+                <input v-if="showSearch" class="v-selected v-select-search" :class="cClass.search ? cClass.search : ''" type="text" v-model="search" />
             </div>
         </div>
-        <span class="v-select-icon" :class="{'rotate' :rotate}">
+        <span v-if="clearable" class="v-clear-icon" :class="cClass.clearIcon ? cClass.clearIcon : ''" @click="clearValues()">
+            <slot name="clear-icon">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 60 60" xml:space="preserve">
+                <rect x="27.482" y="-8.948" transform="matrix(0.7071 0.7071 -0.7071 0.7071 30.0068 -12.5957)" fill="#58595B" width="5.451" height="77.742"/>
+                <rect x="27.482" y="-8.948" transform="matrix(0.707 -0.7072 0.7072 0.707 -12.3115 30.1299)" fill="#58595B" width="5.452" height="77.743"/>
+                </svg>
+            </slot>
+        </span>
+        <span class="v-select-icon" :class="[cClass.dropdownIcon ? cClass.dropdownIcon : '', {'rotate' :rotate}]">
             <slot name="icon">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 60 60"  xml:space="preserve">
                 <g>
@@ -18,9 +26,24 @@
                 </svg>
             </slot>
         </span>
-        <div class="v-dropdown">
+        <div v-if="!multiselect" class="v-dropdown" :class="cClass.dropdown ? cClass.dropdown : ''">
             <div v-for="(option, index) in filteredOptions" class="v-dropdown__item" :key="index" :class="[option.class ? option.class : '',{'v-dropdown-hide': option.hide ? true : false}]" @click="selectOption(option)">
                 {{label ? option[label] : option}}
+            </div>
+            <div v-if="options.length == 0" class="v-dropdown__item">
+                <slot name="noOptions">
+                    No options
+                </slot>
+            </div>
+        </div>
+        <div v-if="multiselect" class="v-dropdown" :class="cClass.dropdown ? cClass.dropdown : ''">
+            <div v-for="(option, index) in filteredOptions" class="v-dropdown__item v-dropdown-multiselect" :key="index" :class="[option.class ? option.class : '',{'v-dropdown-hide': option.hide ? true : false}]">
+                <div class="v-dropdown-multiselect__label">
+                    {{label ? option[label] : option}}
+                </div>
+                <div class="v-dropdown-multiselect__check">
+                    <div class="v-checkbox" :class="[cClass.checkbox ? cClass.checkbox : '', {'selected' : check(option)}]" @click="selectItem(option)"></div>
+                </div>
             </div>
             <div v-if="options.length == 0" class="v-dropdown__item">
                 <slot name="noOptions">
@@ -59,7 +82,22 @@ export default {
         searchable:{
             type: Boolean,
             default: false,
-        }
+        },
+
+        clearable:{
+            type: Boolean,
+            default: false,
+        },
+
+        multiselect:{
+            type: Boolean,
+            default: false,
+        },
+
+        customClasses:{
+            type: Object,
+            default: () => {},
+        },
 
     },
     data(){
@@ -72,6 +110,9 @@ export default {
 
         showSearch: false,
         search: '',
+        selectedItems: [],
+
+        cClass: {},
 
       }
 
@@ -97,38 +138,132 @@ export default {
 
             if(this.reduce){
 
-                let checkDisplay = this.options.find(o => o[this.reduce] == this.value);
+                if(!this.multiselect){
+                
+                    let checkDisplay = this.options.find(o => o[this.reduce] == this.value);
 
-                if(!checkDisplay){
+                    if(!checkDisplay){
 
-                    this.display = '';
+                        this.display = '';
+
+                    }else{
+
+                        this.display = checkDisplay;
+
+                    }
+
+                    return;
 
                 }else{
 
-                    this.display = checkDisplay;
+                    let bufferDisplay = [];
+
+                    this.value.forEach(item=>{
+
+                        let checkDisplay = this.options.find(o => o[this.reduce] == item);
+                        
+                        if(checkDisplay){
+
+                            if(this.label){
+                            
+                            bufferDisplay.push(checkDisplay[this.label]);
+
+                            }else{
+
+                                bufferDisplay.push(checkDisplay);
+
+                            }
+
+                        }
+
+                    });
+
+                    if(bufferDisplay.length > 1){
+                        this.display = bufferDisplay.join(', ');
+                    }else{
+                        this.display = bufferDisplay[0];
+                    }
+
+                    return;
 
                 }
 
-                return;
-
             }
 
-            this.display = this.value;
+            if(!this.multiselect){
+
+                this.display = this.value;
+                return;
+            }
+
+            let bufferDisplay = [];
+
+            this.value.forEach(item=>{
+
+                let checkDisplay = this.options.find(o => o[this.label] == item[this.label]);
+                
+                if(checkDisplay){
+
+                    bufferDisplay.push(checkDisplay[this.label]);
+
+                }
+
+            });
+
+            if(bufferDisplay.length > 1){
+                this.display = bufferDisplay.join(', ');
+            }else{
+                this.display = bufferDisplay[0];
+            }
 
         },
 
         selectOption(option){
 
-            this.display = option
+            if(!this.multiselect){
+            
+                this.display = option
 
-            if(this.reduce){
+                if(this.reduce){
 
-                this.$emit('input', option[this.reduce])
-                return;
+                    this.$emit('input', option[this.reduce])
+                    return;
+
+                }
+                
+                this.$emit('input', option)
+
+            }else{
+
+                if(!this.label) this.display = this.selectedItems.join(', ');
+                if(this.label){
+
+                    let bufferSelected = [];
+
+                    this.selectedItems.forEach(item =>{
+                        bufferSelected.push(item[this.label]);
+                    })
+
+                    this.display = bufferSelected.join(', ');
+
+                }
+
+                if(this.reduce){
+
+                    let bufferSelected = [];
+
+                    this.selectedItems.forEach(item =>{
+                        bufferSelected.push(item[this.reduce]);
+                    })
+
+                    this.$emit('input', bufferSelected)
+                    return;
+
+                }
+                
+                this.$emit('input', this.selectedItems)
 
             }
-            
-            this.$emit('input', option)
 
         },
 
@@ -159,8 +294,10 @@ export default {
 
         close(e){
 
-            if(!e.target.classList.contains('v-selected') && !e.target.classList.contains('v-dropdown') && !e.target.classList.contains('v-select-search')){
+            if(!e.target.classList.contains('v-selected') && !e.target.classList.contains('v-dropdown') && !e.target.classList.contains('v-select-search') && !e.target.classList.contains('v-checkbox')){
 
+                if(this.multiselect && e.target.classList.contains('v-dropdown-multiselect__label') || this.multiselect && e.target.classList.contains('v-dropdown-multiselect')) return;
+                
                 let lists = document.querySelectorAll('.v-dropdown');
                 this.showSearch = false;
                 this.search = '';
@@ -209,10 +346,54 @@ export default {
 
         },
 
+        selectItem(option){
+
+            let find = this.selectedItems.find(o => o == option);
+
+            if(!find){
+                this.selectedItems.push(option);
+                this.selectOption(option);
+                return;
+            }
+
+            this.selectedItems = this.selectedItems.filter(o => o != option);
+            this.selectOption(option);
+
+        },
+
+        check(option){
+
+            let find = this.selectedItems.find(o => o == option);
+
+            if(!find){
+                return false;
+            }
+
+            return true;
+
+        },
+
+        clearValues(){
+
+            this.display = '';
+            this.search = '';
+            this.select = '';
+            this.selectedItems = [];
+
+            if(this.multiselect){
+                this.$emit('input', []);
+                return;
+            }
+
+            this.$emit('input', '');
+
+        },
+
     },
     mounted(){
 
         this.findModel();
+        this.cClass = this.customClasses ? this.customClasses : {};
         document.addEventListener('click', this.close)
 
     },
@@ -253,6 +434,11 @@ export default {
     display:flex;
     position:relative;
     border-bottom:1px rgb(192, 192, 192) solid;
+    width:100%;
+}
+
+.v-select:hover > .v-clear-icon{
+    display: flex;
 }
 
 .v-select-container{
@@ -265,7 +451,7 @@ export default {
     align-items: center;
 }
 
-.v-select-icon{
+.v-select-icon, .v-clear-icon{
     position: relative;
     padding: 5px;
     display: flex;
@@ -275,7 +461,11 @@ export default {
     bottom:0px; 
 }
 
-.v-select-icon svg{
+.v-clear-icon{
+    cursor: pointer;
+}
+
+.v-select-icon svg, .v-clear-icon svg{
     width:8px;
     height:8px; 
 }
@@ -288,7 +478,7 @@ export default {
     display:block;
     position:relative;
     width:100%;
-    height:32px;
+    min-height:32px;
     border-radius: 0;
     border:none;
     padding: 5px;
@@ -324,7 +514,11 @@ export default {
 }
 
 .v-dropdown__item{
+    display:flex;
+    align-items: center;
     padding:10px 5px;
+    box-sizing: border-box;
+    min-height: 41px;
 }
 
 .v-dropdown__item:hover{
@@ -333,6 +527,47 @@ export default {
 
 .v-dropdown-hide{
     display:none;
+}
+
+.v-dropdown-multiselect{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.v-dropdown-multiselect.v-dropdown-multiselect__check{
+    width:20%;
+    max-width: 20px;
+}
+
+.v-checkbox{
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    width:15px;
+    height:15px;
+    border:1px #dbdbdb solid;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.v-checkbox.selected{
+    background: none;
+    border:none;
+}
+
+.v-checkbox.selected::after{
+    content: '';
+    width: 3px;
+    height: 8px;
+    border: solid #8eac4a;
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+    margin-top: -2px;
+}
+
+.v-clear-icon{
+    display: none;
 }
 
 </style>
